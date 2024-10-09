@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: api
+    env: docker
+    dockerfilePath: ./Dockerfile
+    buildCommand: ""
+    startCommand: uvicorn app:app --host 0.0.0.0 --port 8000
+    autoDeploy: true
+    envVars:
+      - key: REDIS_URL
+        value: redis://redissrv:6379
+
+  - type: worker
+    name: celery
+    env: docker
+    dockerfilePath: ./Dockerfile
+    buildCommand: ""
+    startCommand: celery -A celery_app worker --loglevel=info
+    autoDeploy: true
+
+  - type: redis
+    name: redis
+    image: redis:alpine
+    ports:
+      - 6379
