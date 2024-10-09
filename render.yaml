@@ -11,5 +11,4 @@ services:
 
   - type: redis
     name: redis
-    ipAllowList:
-      - "0.0.0.0/0"  # Adjust this for production
+    
