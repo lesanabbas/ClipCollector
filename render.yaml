@@ -3,13 +3,13 @@ services:
     name: api
     env: docker
     dockerfilePath: ./Dockerfile
-    startCommand: uvicorn app:app --host 0.0.0.0 --port 8000
 
   - type: worker
     name: celery
     env: docker
     dockerfilePath: ./Dockerfile
-    startCommand: celery -A celery_app worker --loglevel=info
 
   - type: redis
     name: redis
+    ipAllowList:
+      - "0.0.0.0/0"  # Adjust this for production
