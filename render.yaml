@@ -11,4 +11,5 @@ services:
 
   - type: redis
     name: redis
-    
+    ipAllowList:  # Specify allowed IPs or ranges here
+      - "0.0.0.0/0"  # Allow all IPs (for development only)
