@@ -1,15 +1,52 @@
 services:
   - type: web
-    name: api
+    name: downloader-api
     env: docker
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./Dockerfile  # Assuming Dockerfile is in the root directory
+    healthCheckPath: /healthz  # Optional: If your Django app has a health check route
+    preDeployCommand: python manage.py migrate  # Run migrations before deployment
+    envVars:
+      - fromGroup: downloader-env
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: downloader-redis
+          property: connectionString
+    buildCommand: pip install -r requirements.txt  # Optional: If you need to install dependencies
 
   - type: worker
-    name: celery
+    name: downloader-celery
     env: docker
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./Dockerfile  # Celery worker will use the same Dockerfile
+    dockerCommand: celery -A celery_app worker --loglevel=info
+    envVars:
+      - fromGroup: downloader-env
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: downloader-redis
+          property: connectionString
 
   - type: redis
-    name: redis
-    ipAllowList:
-      - "0.0.0.0/0"  # Allow all IPs (for development only)
+    name: downloader-redis
+    ipAllowList: []
+    maxmemoryPolicy: noeviction  # Adjust this if you want a different memory policy
+
+envVarGroups:
+  - name: downloader-env
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true  # Django's secret key
+      - key: DATABASE_URL
+        fromDatabase:
+          name: downloader-db
+          property: connectionString
+      - key: DEBUG
+        value: 'False'  # Set to 'True' for development
+
+databases:
+  - name: downloader-db
+    region: frankfurt  # Adjust region based on your deployment
+    databaseName: downloader
+    user: downloader
+    ipAllowList: []
