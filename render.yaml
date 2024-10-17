@@ -1,52 +1,47 @@
 services:
   - type: web
-    name: downloader-api
+    name: api-service
+    region: singapore
     env: docker
-    dockerfilePath: ./Dockerfile  # Assuming Dockerfile is in the root directory
-    healthCheckPath: /healthz  # Optional: If your Django app has a health check route
-    preDeployCommand: python manage.py migrate  # Run migrations before deployment
+    plan: free
+    dockerfilePath: ./Dockerfile
+    numInstances: 1
+    healthCheckPath: /healthz
     envVars:
-      - fromGroup: downloader-env
       - key: REDIS_URL
         fromService:
-          type: redis
-          name: downloader-redis
-          property: connectionString
-    buildCommand: pip install -r requirements.txt  # Optional: If you need to install dependencies
+          name: redis
+          property: host
+    ports:
+      - port: 8000
+        protocol: http
+    dependsOn:
+      - redis
 
   - type: worker
-    name: downloader-celery
+    name: celery-worker
+    region: singapore
     env: docker
-    dockerfilePath: ./Dockerfile  # Celery worker will use the same Dockerfile
-    dockerCommand: celery -A celery_app worker --loglevel=info
+    plan: free
+    dockerfilePath: ./Dockerfile
+    numInstances: 1
+    startCommand: celery -A celery_app worker --loglevel=info
+    dependsOn:
+      - redis
     envVars:
-      - fromGroup: downloader-env
       - key: REDIS_URL
         fromService:
-          type: redis
-          name: downloader-redis
-          property: connectionString
+          name: redis
+          property: host
 
   - type: redis
-    name: downloader-redis
-    ipAllowList: []
-    maxmemoryPolicy: noeviction  # Adjust this if you want a different memory policy
-
-envVarGroups:
-  - name: downloader-env
-    envVars:
-      - key: SECRET_KEY
-        generateValue: true  # Django's secret key
-      - key: DATABASE_URL
-        fromDatabase:
-          name: downloader-db
-          property: connectionString
-      - key: DEBUG
-        value: 'False'  # Set to 'True' for development
+    name: redis
+    region: singapore
+    plan: free
+    image: redis:alpine
 
 databases:
-  - name: downloader-db
-    region: frankfurt  # Adjust region based on your deployment
-    databaseName: downloader
-    user: downloader
-    ipAllowList: []
+  - name: bytebase-metadb
+    region: singapore
+    plan: free
+    postgresMajorVersion: 15
