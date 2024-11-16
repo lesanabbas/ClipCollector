@@ -1,22 +1,22 @@
-version: '3.8'
+# version: '3.8'
 
+# services:
+#   api:
+#     build: .
+#     volumes:
+#       - .:/app
+#     ports:
+#       - "8000:8000"
+
+
+version: "3.9"
 services:
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
     volumes:
-      - .:/app  # Mount the current directory to /app in the container
-    ports:
-      - "8000:8000"  # Expose port 8000
-    depends_on:
-      - redis  # Ensure Redis is started before your app
-
-  redis:
-    image: "redis:alpine"  # Use a lightweight Redis image
-    ports:
-      - "6379:6379"  # Expose Redis port
-
-  celery:
-    build: .
-    command: celery -A celery_app worker --loglevel=info
-    depends_on:
-      - redis  # Ensure Redis is started before Celery
+      - .:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
